@@ -167,5 +167,19 @@
       </java>
     </sequential>
   </macrodef>
+
+  <macrodef name="flexserver">
+    <sequential>
+      <requireflex/>
+      <java classname="com.martiansoftware.nailgun.NGServer" maxmemory="256m" fork="true">
+        <classpath>
+          <pathelement location="${flexsdk.dir}/lib/mxmlc.jar"/>
+          <pathelement location="${flexsdk.dir}/lib/compc.jar"/>
+          <pathelement location="${user.home}/.m2/repository/com/martiansoftware/nailgun/0.7.1/nailgun-0.7.1.jar"/>
+        </classpath>
+        <jvmarg value="-Djava.awt.headless=true"/>
+      </java>
+    </sequential>
+  </macrodef>
 </antlib>
 
