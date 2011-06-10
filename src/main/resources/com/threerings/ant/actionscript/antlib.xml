@@ -1,12 +1,13 @@
 <antlib>
-  <macrodef name="requireflex"
-      description="Fails unless it can find the flexsdk or unless flexsdk.dir is already set">
+  <macrodef name="checkflex"
+      description="Puts the location of the Flex SDK into flexsdk.dir if possible">
     <sequential>
       <if>
         <not><isset property="flexsdk.dir"/></not>
         <then>
           <!-- locate our flex sdk -->
           <property name="flex.version" value="4.1.0.16076"/>
+          <property environment="env"/>
           <condition property="flexsdk.prop" value="${env.FLEX_HOME}">
             <available file="${env.FLEX_HOME}/lib/compc.jar"/>
           </condition>
@@ -16,16 +17,25 @@
           <condition property="flexsdk.prop" value="../OOOLIBS-FLEX/flex_sdk_${flex.version}">
             <available file="../OOOLIBS-FLEX/flex_sdk_${flex.version}/lib/compc.jar"/>
           </condition>
-          <dirname property="parent.dir" file="../somefile.txt"/>
-          <fail><condition><not><isset property="flexsdk.prop"/></not></condition>
-            You must either pass -Dflexsdk.dir=somedir on the command line, define a
-            FLEX_HOME environment variable, or make the Flex SDK available as
-            ${parent.dir}/flex/flex_sdk_${flex.version}
-          </fail>
-          <!-- Absolutize the found directory into flexsdk.dir -->
-          <property name="flexsdk.dir" location="${flexsdk.prop}"/>
+          <if><isset property="flexsdk.prop"/><then>
+            <!-- absolutize the found directory into flexsdk.dir -->
+            <property name="flexsdk.dir" location="${flexsdk.prop}"/>
+          </then></if>
         </then>
       </if>
+    </sequential>
+  </macrodef>
+
+  <macrodef name="requireflex"
+      description="Fails unless it can find the Flex SDK or flexsdk.dir is already set">
+    <sequential>
+      <checkflex/>
+      <dirname property="parent.dir" file="../somefile.txt"/>
+      <fail><condition><not><isset property="flexsdk.dir"/></not></condition>
+        You must either pass -Dflexsdk.dir=somedir on the command line, define a
+        FLEX_HOME environment variable, or make the Flex SDK available as
+        ${parent.dir}/flex/flex_sdk_${flex.version}
+      </fail>
     </sequential>
   </macrodef>
 
