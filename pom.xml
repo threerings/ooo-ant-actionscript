@@ -4,7 +4,10 @@
   <groupId>com.threerings.ant</groupId>
   <artifactId>actionscript</artifactId>
   <packaging>jar</packaging>
-  <version>1.3</version>
+  <version>1.4</version>
+  <scm>
+    <connection>scm:hg:https://code.google.com/p/ooo-ant-actionscript/</connection>
+  </scm>
   <dependencies>
     <dependency>
       <groupId>com.martiansoftware</groupId>
