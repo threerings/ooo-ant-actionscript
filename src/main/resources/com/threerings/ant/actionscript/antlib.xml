@@ -191,5 +191,63 @@
       </java>
     </sequential>
   </macrodef>
+
+  <macrodef name="genairkeystore">
+    <attribute name="keystore"/>
+    <attribute name="password"/>
+    <attribute name="orgname"/>
+    <attribute name="commonname" default="SelfSigned"/>
+    <element name="xargs" implicit="true" optional="true"/>
+    <sequential>
+      <requireflex/>
+      <if>
+        <not><available file="@{keystore}"/></not>
+        <then>
+          <echo level="info">Generating @{keystore}</echo>
+          <java jar="${flexsdk.dir}/lib/adt.jar" failonerror="true" fork="true" maxmemory="1024m">
+            <jvmarg value="-Djava.awt.headless=true"/>
+            <xargs/>
+            <arg value="-certificate"/>
+            <arg value="-cn"/>
+            <arg value="@{commonname}"/>
+            <arg value="-o"/>
+            <arg value="@{orgname}"/>
+            <arg value="1024-RSA"/>
+            <arg value="@{keystore}"/>
+            <arg value="@{password}"/>
+          </java>
+        </then>
+        <else>
+          <echo level="verbose">Not generating @{keystore}; it already exists</echo>
+        </else>
+      </if>
+    </sequential>
+  </macrodef>
+
+  <macrodef name="packageair">
+    <attribute name="keystore"/>
+    <attribute name="descriptor"/>
+    <attribute name="password"/>
+    <attribute name="deploydir" default=""/>
+    <attribute name="dest" default="@{deploydir}/${ant.project.name}.air"/>
+    <attribute name="swf" default="${ant.project.name}.swf"/>
+    <sequential>
+      <requireflex/>
+      <java jar="${flexsdk.dir}/lib/adt.jar" fork="true" failonerror="true">
+        <arg value="-package"/>
+        <arg value="-storetype"/>
+        <arg value="pkcs12"/>
+        <arg value="-keystore"/>
+        <arg value="@{keystore}"/>
+        <arg value="-storepass"/>
+        <arg value="@{password}"/>
+        <arg value="@{dest}"/>
+        <arg value="@{descriptor}"/>
+        <arg value="-C"/>
+        <arg value="@{deploydir}"/>
+        <arg value="@{swf}"/>
+      </java>
+    </sequential>
+  </macrodef>
 </antlib>
 
