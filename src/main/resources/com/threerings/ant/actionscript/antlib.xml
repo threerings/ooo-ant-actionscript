@@ -6,7 +6,7 @@
         <not><isset property="flexsdk.dir"/></not>
         <then>
           <!-- locate our flex sdk -->
-          <property name="flex.version" value="4.1.0.16076"/>
+          <property name="flex.version" value="4.6.0.23201"/>
           <property environment="env"/>
           <condition property="flexsdk.prop" value="${env.FLEX_HOME}">
             <available file="${env.FLEX_HOME}/lib/compc.jar"/>
