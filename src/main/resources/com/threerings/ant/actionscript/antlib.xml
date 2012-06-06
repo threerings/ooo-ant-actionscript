@@ -228,6 +228,7 @@
     <attribute name="keystore"/>
     <attribute name="descriptor"/>
     <attribute name="password"/>
+    <attribute name="tsa" default="https://timestamp.geotrust.com/tsa"/>
     <attribute name="deploydir" default=""/>
     <attribute name="dest" default="@{deploydir}/${ant.project.name}.air"/>
     <attribute name="swf" default="${ant.project.name}.swf"/>
@@ -241,6 +242,8 @@
         <arg value="@{keystore}"/>
         <arg value="-storepass"/>
         <arg value="@{password}"/>
+        <arg value="-tsa"/>
+        <arg value="@{tsa}"/>
         <arg value="@{dest}"/>
         <arg value="@{descriptor}"/>
         <arg value="-C"/>
