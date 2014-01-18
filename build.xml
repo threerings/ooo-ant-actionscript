@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <project name="ooo-ant-actionscript" default="dist" basedir=".">
-  <property name="deploy.dir"  value="dist"/>
+  <property name="build.dir"  value="dist"/>
 
   <!-- bring in our standard build support -->
   <property name="ooo-build.vers" value="2.5"/>
@@ -8,18 +8,18 @@
   <import file="${user.home}/.m2/ooo-build/${ooo-build.vers}/ooo-build.xml"/>
 
   <target name="distclean">
-    <delete dir="${deploy.dir}"/>
+    <delete dir="${build.dir}"/>
   </target>
 
   <target name="dist">
-    <mkdir dir="${deploy.dir}"/>
-    <jar destfile="${deploy.dir}/${ant.project.name}.jar">
+    <mkdir dir="${build.dir}"/>
+    <jar destfile="${build.dir}/${ant.project.name}.jar">
       <fileset dir="src/main/resources" includes="**"/>
     </jar>
   </target>
 
   <target name="maven-deploy" depends="dist,-init-ooo"
           description="Deploys our build artifacts to a Maven repository.">
-    <mavendeploy file="${deploy.dir}/${ant.project.name}.jar" pom="pom.xml"/>
+    <mavendeploy file="${build.dir}/${ant.project.name}.jar" pom="pom.xml"/>
   </target>
 </project>
