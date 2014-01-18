@@ -145,8 +145,7 @@
     <attribute name="srcdir" default="src/main/as" />
     <sequential>
       <mavendep id="asimports">
-        <remoteRepository id="ooo-public" url="http://ooo-maven.googlecode.com/hg/repository"/>
-        <dependency groupId="com.threerings.aspirin" artifactId="import_action" version="1.7-SNAPSHOT" type="py"/>
+        <dependency groupId="com.threerings.aspirin" artifactId="import_action" version="1.12" type="py"/>
       </mavendep>
       <exec executable="python">
         <arg value="${com.threerings.aspirin:import_action:py}" />
