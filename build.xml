@@ -18,6 +18,7 @@
     </jar>
   </target>
 
+  <!-- ant -Dmaven.deploy.repo=file:///path/to/repo maven-deploy to deploy outside ~/.m2 -->
   <target name="maven-deploy" depends="dist,-init-ooo"
           description="Deploys our build artifacts to a Maven repository.">
     <mavendeploy file="${build.dir}/${ant.project.name}.jar" pom="pom.xml"/>
