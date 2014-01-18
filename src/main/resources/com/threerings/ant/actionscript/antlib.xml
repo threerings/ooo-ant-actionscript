@@ -1,4 +1,199 @@
 <antlib>
+  <macrodef name="checkair"
+      description="Puts the location of the AIR SDK into airsdk.dir if possible">
+    <sequential>
+      <if>
+        <not><isset property="airsdk.dir"/></not>
+        <then>
+          <!-- locate our AIR sdk. 'compc-cli' is the ASC 2.0 version of the compc jar -->
+          <property environment="env"/>
+          <condition property="airsdk.prop" value="${env.AIR_HOME}">
+            <available file="${env.AIR_HOME}/lib/compc-cli.jar"/>
+          </condition>
+          <condition property="airsdk.prop" value="../air/AIRSDK">
+            <available file=".../air/AIRSDK/lib/compc-cli.jar"/>
+          </condition>
+          <condition property="airsdk.prop" value="${env.FLEX_HOME}">
+            <!-- if FLEX_HOME is set, and Flex has been overlaid with AIR, that's cool too -->
+            <available file="${env.FLEX_HOME}/lib/compc-cli.jar"/>
+          </condition>
+          <if><isset property="airsdk.prop"/><then>
+            <!-- absolutize the found directory into airsdk.dir -->
+            <property name="airsdk.dir" location="${airsdk.prop}"/>
+          </then></if>
+        </then>
+      </if>
+    </sequential>
+  </macrodef>
+
+  <macrodef name="requireair"
+      description="Fails unless it can find the AIR SDK or airsdk.dir is already set">
+    <sequential>
+      <checkair/>
+      <dirname property="parent.dir" file="../somefile.txt"/>
+      <fail><condition><not><isset property="airsdk.dir"/></not></condition>
+        You must pass -airsdk.dir=somedir on the command line, OR define an
+        AIR_HOME environment variable, OR define a FLEX_HOME environment variable for a Flex
+        installation that has been overlaid with the AIR SDK, OR make the AIR SDK available as
+        ${parent.dir}/air/AIRSDK
+      </fail>
+    </sequential>
+  </macrodef>
+
+  <macrodef name="amxmlc" description="runs amxmlc with Three Rings' default configuration">
+    <attribute name="srcdir"/>
+    <attribute name="dest"/>
+    <attribute name="main"/>
+    <attribute name="id" default="${ant.project.name}"/>
+    <attribute name="libpath" default=","/>
+    <attribute name="stacktraces" default="true"/>
+    <attribute name="use-network" default="false"/>
+    <attribute name="optimize" default="true"/>
+    <attribute name="debug" default="true"/>
+    <element name="xargs" implicit="true" optional="true"/>
+    <sequential>
+      <requireair/>
+      <java jar="${airsdk.dir}/lib/mxmlc-cli.jar" failonerror="true" fork="true" maxmemory="1024m">
+        <jvmarg value="-Djava.awt.headless=true"/>
+        <xargs/>
+        <arg value="+configname=air"/>
+        <arg value="-load-config=${airsdk.dir}/frameworks/air-config.xml"/>
+        <arg value="-verbose-stacktraces=@{stacktraces}"/>
+        <arg value="-use-network=@{use-network}"/>
+        <arg value="-compiler.library-path+=@{libpath}"/>
+        <arg value="-compiler.debug=@{debug}"/>
+        <arg value="-compiler.optimize=@{optimize}"/>
+        <arg value="-compiler.omit-trace-statements=false"/>
+        <arg value="-source-path+=@{srcdir}"/>
+        <arg value="-output=@{dest}"/>
+        <arg value="@{srcdir}/@{main}"/>
+      </java>
+    </sequential>
+  </macrodef>
+
+  <macrodef name="mxmlc" description="runs mxmlc with Three Rings' default configuration">
+    <attribute name="srcdir"/>
+    <attribute name="dest"/>
+    <attribute name="main"/>
+    <attribute name="id" default="${ant.project.name}"/>
+    <attribute name="libpath" default=","/>
+    <attribute name="stacktraces" default="true"/>
+    <attribute name="use-network" default="false"/>
+    <attribute name="optimize" default="true"/>
+    <attribute name="debug" default="true"/>
+    <element name="xargs" implicit="true" optional="true"/>
+    <sequential>
+      <requireair/>
+      <java jar="${airsdk.dir}/lib/mxmlc-cli.jar" failonerror="true" fork="true" maxmemory="1024m">
+        <jvmarg value="-Djava.awt.headless=true"/>
+        <xargs/>
+        <arg value="-load-config=${airsdk.dir}/frameworks/flex-config.xml"/>
+        <arg value="-verbose-stacktraces=@{stacktraces}"/>
+        <arg value="-use-network=@{use-network}"/>
+        <arg value="-compiler.library-path+=@{libpath}"/>
+        <arg value="-compiler.debug=@{debug}"/>
+        <arg value="-compiler.optimize=@{optimize}"/>
+        <arg value="-compiler.omit-trace-statements=false"/>
+        <arg value="-source-path+=@{srcdir}"/>
+        <arg value="-output=@{dest}"/>
+        <arg value="@{srcdir}/@{main}"/>
+      </java>
+    </sequential>
+  </macrodef>
+
+  <macrodef name="compc" description="runs compc with Three Rings' default configuration">
+    <attribute name="srcdir"/>
+    <attribute name="dest"/>
+    <attribute name="id" default="${ant.project.name}"/>
+    <attribute name="libpath" default=","/>
+    <attribute name="debug" default="true"/>
+    <attribute name="optimize" default="true"/>
+    <element name="xargs" implicit="true" optional="true"/>
+    <sequential>
+      <requireair/>
+      <java jar="${airsdk.dir}/lib/compc-cli.jar" failonerror="true" fork="true" maxmemory="1024m">
+        <jvmarg value="-Djava.awt.headless=true"/>
+        <xargs/>
+        <arg value="-load-config=${airsdk.dir}/frameworks/flex-config.xml"/>
+        <arg value="-compiler.external-library-path+=@{libpath}"/>
+        <arg value="-compiler.source-path=@{srcdir}"/>
+        <arg value="-compiler.debug=@{debug}"/>
+        <arg value="-compiler.optimize=@{optimize}"/>
+        <arg value="-compiler.omit-trace-statements=false"/>
+        <arg value="-include-sources=@{srcdir}"/>
+        <arg value="-output=@{dest}"/>
+      </java>
+    </sequential>
+  </macrodef>
+
+  <macrodef name="genairkeystore">
+    <attribute name="keystore"/>
+    <attribute name="password"/>
+    <attribute name="orgname"/>
+    <attribute name="commonname" default="SelfSigned"/>
+    <element name="xargs" implicit="true" optional="true"/>
+    <sequential>
+      <requireair/>
+      <if>
+        <not><available file="@{keystore}"/></not>
+        <then>
+          <echo level="info">Generating @{keystore}</echo>
+          <java jar="${airsdk.dir}/lib/adt.jar" failonerror="true" fork="true" maxmemory="1024m">
+            <jvmarg value="-Djava.awt.headless=true"/>
+            <xargs/>
+            <arg value="-certificate"/>
+            <arg value="-cn"/>
+            <arg value="@{commonname}"/>
+            <arg value="-o"/>
+            <arg value="@{orgname}"/>
+            <arg value="1024-RSA"/>
+            <arg value="@{keystore}"/>
+            <arg value="@{password}"/>
+          </java>
+        </then>
+        <else>
+          <echo level="verbose">Not generating @{keystore}; it already exists</echo>
+        </else>
+      </if>
+    </sequential>
+  </macrodef>
+
+  <macrodef name="packageair">
+    <attribute name="keystore"/>
+    <attribute name="descriptor"/>
+    <attribute name="password"/>
+    <attribute name="tsa" default="https://timestamp.geotrust.com/tsa"/>
+    <attribute name="deploydir" default=""/>
+    <attribute name="dest" default="@{deploydir}/${ant.project.name}.air"/>
+    <attribute name="swf" default="${ant.project.name}.swf"/>
+    <element name="xargs" implicit="true" optional="true"/>
+    <sequential>
+      <requireair/>
+      <java jar="${airsdk.dir}/lib/adt.jar" fork="true" failonerror="true">
+        <xargs/>
+        <arg value="-package"/>
+        <arg value="-storetype"/>
+        <arg value="pkcs12"/>
+        <arg value="-keystore"/>
+        <arg value="@{keystore}"/>
+        <arg value="-storepass"/>
+        <arg value="@{password}"/>
+        <arg value="-tsa"/>
+        <arg value="@{tsa}"/>
+        <arg value="@{dest}"/>
+        <arg value="@{descriptor}"/>
+        <arg value="-C"/>
+        <arg value="@{deploydir}"/>
+        <arg value="@{swf}"/>
+      </java>
+    </sequential>
+  </macrodef>
+
+  <!-- LEGACY FLEX SUPPORT
+    The following macros should be used only with projects that require Flex components,
+    and connot be built with the ASC 2.0 compiler that comes with AIR.
+  -->
+
   <macrodef name="checkflex"
       description="Puts the location of the Flex SDK into flexsdk.dir if possible">
     <sequential>
@@ -39,7 +234,8 @@
     </sequential>
   </macrodef>
 
-  <macrodef name="amxmlc">
+  <macrodef name="mxmlc-asc1"
+      description="Runs the legacy Flex version of mxmlc with Three Rings' default configuration">
     <attribute name="srcdir"/>
     <attribute name="dest"/>
     <attribute name="main"/>
@@ -50,7 +246,6 @@
     <attribute name="use-network" default="false"/>
     <attribute name="debug" default="true"/>
     <element name="xargs" implicit="true" optional="true"/>
-
     <sequential>
       <requireflex/>
       <maventaskdef groupId="com.threerings.ant" artifactId="javanailgun" version="1.0"/>
@@ -59,9 +254,8 @@
           failonerror="true" fork="true" maxmemory="1024m">
         <jvmarg value="-Djava.awt.headless=true"/>
         <xargs/>
-        <arg value="-static-link-runtime-shared-libraries=@{static-lrsl}"/>
         <arg value="+flexlib=${flexsdk.dir}/frameworks"/>
-        <arg value="+configname=air"/>
+        <arg value="-static-link-runtime-shared-libraries=@{static-lrsl}"/>
         <arg value="-verbose-stacktraces=@{stacktraces}"/>
         <arg value="-use-network=@{use-network}"/>
         <arg value="-compiler.library-path+=@{libpath}"/>
@@ -76,7 +270,8 @@
     </sequential>
   </macrodef>
 
-  <macrodef name="mxmlc">
+  <macrodef name="amxmlc-asc1"
+      description="runs the legacy Flex version of amxmlc with Three Rings' default configuration">
     <attribute name="srcdir"/>
     <attribute name="dest"/>
     <attribute name="main"/>
@@ -85,6 +280,7 @@
     <attribute name="stacktraces" default="true"/>
     <attribute name="static-lrsl" default="false"/>
     <attribute name="use-network" default="false"/>
+    <attribute name="optimize" default="true"/>
     <attribute name="debug" default="true"/>
     <element name="xargs" implicit="true" optional="true"/>
     <sequential>
@@ -93,16 +289,16 @@
       <javanailgun ngdest="dist/@{id}.ng.sh" ngwrite="${ngwrite}" ngrun="${ngrun}"
           classpath="${flexsdk.dir}/lib/mxmlc.jar" classname="flex2.tools.Mxmlc"
           failonerror="true" fork="true" maxmemory="1024m">
-        <jvmarg value="-Djava.awt.headless=true"/>
         <xargs/>
-        <arg value="-static-link-runtime-shared-libraries=@{static-lrsl}"/>
         <arg value="+flexlib=${flexsdk.dir}/frameworks"/>
+        <arg value="+configname=air"/>
+        <arg value="-static-link-runtime-shared-libraries=@{static-lrsl}"/>
+        <arg value="-load-config=${flexsdk.dir}/frameworks/air-config.xml"/>
         <arg value="-verbose-stacktraces=@{stacktraces}"/>
         <arg value="-use-network=@{use-network}"/>
         <arg value="-compiler.library-path+=@{libpath}"/>
         <arg value="-compiler.debug=@{debug}"/>
-        <arg value="-compiler.accessible=false"/>
-        <arg value="-compiler.incremental=false"/>
+        <arg value="-compiler.optimize=@{optimize}"/>
         <arg value="-compiler.omit-trace-statements=false"/>
         <arg value="-source-path+=@{srcdir}"/>
         <arg value="-output=@{dest}"/>
@@ -113,7 +309,8 @@
 
   <!-- Runs compc with Three Rings' default configuration.  If useng is set, nailgun is called
     instead of the compc jar-->
-  <macrodef name="compc">
+  <macrodef name="compc-asc1"
+      description="Runs the legacy Flex version of compc with Three Rings' default configuration">
     <attribute name="srcdir"/>
     <attribute name="dest"/>
     <attribute name="id" default="${ant.project.name}"/>
@@ -187,67 +384,6 @@
           <pathelement location="${user.home}/.m2/repository/com/martiansoftware/nailgun/0.7.1/nailgun-0.7.1.jar"/>
         </classpath>
         <jvmarg value="-Djava.awt.headless=true"/>
-      </java>
-    </sequential>
-  </macrodef>
-
-  <macrodef name="genairkeystore">
-    <attribute name="keystore"/>
-    <attribute name="password"/>
-    <attribute name="orgname"/>
-    <attribute name="commonname" default="SelfSigned"/>
-    <element name="xargs" implicit="true" optional="true"/>
-    <sequential>
-      <requireflex/>
-      <if>
-        <not><available file="@{keystore}"/></not>
-        <then>
-          <echo level="info">Generating @{keystore}</echo>
-          <java jar="${flexsdk.dir}/lib/adt.jar" failonerror="true" fork="true" maxmemory="1024m">
-            <jvmarg value="-Djava.awt.headless=true"/>
-            <xargs/>
-            <arg value="-certificate"/>
-            <arg value="-cn"/>
-            <arg value="@{commonname}"/>
-            <arg value="-o"/>
-            <arg value="@{orgname}"/>
-            <arg value="1024-RSA"/>
-            <arg value="@{keystore}"/>
-            <arg value="@{password}"/>
-          </java>
-        </then>
-        <else>
-          <echo level="verbose">Not generating @{keystore}; it already exists</echo>
-        </else>
-      </if>
-    </sequential>
-  </macrodef>
-
-  <macrodef name="packageair">
-    <attribute name="keystore"/>
-    <attribute name="descriptor"/>
-    <attribute name="password"/>
-    <attribute name="tsa" default="https://timestamp.geotrust.com/tsa"/>
-    <attribute name="deploydir" default=""/>
-    <attribute name="dest" default="@{deploydir}/${ant.project.name}.air"/>
-    <attribute name="swf" default="${ant.project.name}.swf"/>
-    <sequential>
-      <requireflex/>
-      <java jar="${flexsdk.dir}/lib/adt.jar" fork="true" failonerror="true">
-        <arg value="-package"/>
-        <arg value="-storetype"/>
-        <arg value="pkcs12"/>
-        <arg value="-keystore"/>
-        <arg value="@{keystore}"/>
-        <arg value="-storepass"/>
-        <arg value="@{password}"/>
-        <arg value="-tsa"/>
-        <arg value="@{tsa}"/>
-        <arg value="@{dest}"/>
-        <arg value="@{descriptor}"/>
-        <arg value="-C"/>
-        <arg value="@{deploydir}"/>
-        <arg value="@{swf}"/>
       </java>
     </sequential>
   </macrodef>
